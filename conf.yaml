@@ -9,7 +9,7 @@ path:
 flag:
   PREPROCESSING: true
   GREYSCALE: false
-  GENERATE_DATASET: false
+  GENERATE_DATASET: true
 exec:
   N_ITERATIONS: 5
   N_RANDOM_STATE: 5

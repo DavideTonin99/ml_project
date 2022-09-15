@@ -58,13 +58,14 @@ def generate_dataset(data, labels, path, n_iterations=20, n_random_state=5):
             np.save(os.path.join(path, f"rs{random_state}_it{iteration}_labels_test.npy"), y_test)
 
 
-def analyze_results(results, support_vectors, n_iterations, len_y_train, len_y_test, output_analysis_path):
+def analyze_results(results, support_vectors, n_iterations, len_y_train, len_y_test, output_analysis_path, params):
     mean_results, std_results, mean_support_vectors = np.mean(results, axis=0), np.std(results, axis=0), np.mean(
         support_vectors, axis=0)
     relative_std = 100 * np.divide(std_results, mean_results)
 
     # print and save output to file
-    output_str = f"n_iterations: {n_iterations}\n" \
+    output_str = f"params: {str(params)}\n" \
+                 f"n_iterations: {n_iterations}\n" \
                  f"n_train_samples: {len_y_train}, n_test_samples: {len_y_test}\n" \
                  f"mean_support_vectors: {mean_support_vectors}\n" \
                  f"mean_accuracy: {mean_results[0]:.2f} +- {std_results[0]:.2f} std ({relative_std[0]:.2f}% RSC) \n" \

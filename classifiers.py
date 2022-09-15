@@ -29,7 +29,7 @@ def pca_svm(x_train, y_train, x_test):
     return prediction, model_svc.n_support_
 
 
-def pca_knn(x_train, y_train, x_test):
+def pca_knn(x_train, y_train, x_test, n_neigh, metric):
     # PCA
     model_pca = PCA(n_components=0.80)
     model_pca.fit(x_train)
@@ -37,7 +37,7 @@ def pca_knn(x_train, y_train, x_test):
     x_test_pca = model_pca.transform(x_test)
 
     # KNN
-    neigh = KNeighborsClassifier(n_neighbors=13, n_jobs=-1)
+    neigh = KNeighborsClassifier(n_neighbors=n_neigh, n_jobs=-1, metric=metric)
     neigh.fit(x_train_pca, y_train)
     prediction = np.argmax(neigh.predict_proba(x_test_pca), axis=1)
 

@@ -4,7 +4,8 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 import numpy as np
 import sys
-
+import os
+import cv2
 
 def parse_yaml(yaml_path):
     stream = open(yaml_path, 'r')
@@ -20,43 +21,54 @@ def prepare_folder_structure(path_list):
             os.makedirs(p)
 
 
-def generate_dataset(data, labels, path, n_iterations=20, n_random_state=5):
-    print("start generate_dataset %s" % sys.argv[0])
+def get_dirs_in_dir(path):
+    """
+    Get all dirname inside path
+    :param path: path to check
+    :return: list of dirname
+    """
+    return [x[0] for x in os.walk(path)]
 
-    for random_state in range(0, n_random_state):
-        # we iterate over random_state to be sure that traning set data changes from an iteration to another
-        # so, we have more variability in the test
-        for iteration in range(0, n_iterations):
-            print(f"start random_state {random_state}, iteration {iteration}")
 
-            # train-test split
-            x_train, x_test, y_train, y_test = train_test_split(
-                data, labels, test_size=0.3, shuffle=True, random_state=random_state
-            )
+def get_files_dir(path):
+    """
+    Get all filename inside path
+    :param path: path to check
+    :return: list of filename
+    """
+    return [os.path.join(path, f) for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))]
 
-            x_train_per_channel, x_test_per_channel = [], []
-            for i in range(3):
-                x_train_per_channel.append(x_train[:, :, :, i].reshape(1, -1)[0])
-                x_test_per_channel.append(x_test[:, :, :, i].reshape(1, -1)[0])
 
-            x_train_per_channel = np.array(x_train_per_channel).T
-            x_test_per_channel = np.array(x_test_per_channel).T
+def resize_images(dim, images, src, dst, greyscale_flag=False):
+    """
+    :param images: lista di immagini da elaborare
+    :param src: path originale, e.g. "./dataset"
+    :param dst: path destination, e.g. "./dataset_processed"
+    :param greyscale_flag: attiva/disattiva greyscale
+    :return: lista di oggetti. ogni oggetto ha 2 attributi: data (dati immagine elaborata), path (path dove salvare l'immagine)
+    """
+    resized_list = []
+    for filepath in images:
+        # IMREAD_COLOR e non IMREAD_UNCHANGED perchè alcune immagini hanno anche il quarto canale che sminchia la
+        # concatenazione. IMREAD_COLOR forza 3 canali
+        read_mode = cv2.IMREAD_COLOR
+        # if greyscale_flag:
+        #    read_mode = cv2.IMREAD_GRAYSCALE
 
-            scaler = StandardScaler()
-            scaler.fit(x_train_per_channel)
+        img = cv2.imread(filepath, read_mode)
+        resized_img = cv2.resize(img, dim, interpolation=cv2.INTER_AREA)
 
-            x_train_scaled = scaler.transform(x_train_per_channel)
-            x_test_scaled = scaler.transform(x_test_per_channel)
+        dest_file_path = filepath.replace(src, dst)
+        resized_list.append({"data": resized_img, "path": dest_file_path})
 
-            x_train = x_train_scaled.reshape(x_train.shape[0], x_train.shape[1], x_train.shape[2], x_train.shape[3])
-            x_test = x_test_scaled.reshape(x_test.shape[0], x_test.shape[1], x_test.shape[2], x_test.shape[3])
+    return resized_list
 
-            x_train, x_test, y_train, y_test = np.array(x_train), np.array(x_test), np.array(y_train), np.array(y_test)
-            np.save(os.path.join(path, f"rs{random_state}_it{iteration}_x_train.npy"), x_train)
-            np.save(os.path.join(path, f"rs{random_state}_it{iteration}_x_test.npy"), x_test)
-            np.save(os.path.join(path, f"rs{random_state}_it{iteration}_labels_train.npy"), y_train)
-            np.save(os.path.join(path, f"rs{random_state}_it{iteration}_labels_test.npy"), y_test)
 
+def save_images(images, paths):
+    """
+    """
+    for idx, img in enumerate(images):
+       cv2.imwrite(paths[idx], img)
 
 def analyze_results(results, support_vectors, n_iterations, len_y_train, len_y_test, output_analysis_path, params):
     mean_results, std_results, mean_support_vectors = np.mean(results, axis=0), np.std(results, axis=0), np.mean(

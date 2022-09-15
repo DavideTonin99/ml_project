@@ -1,6 +1,0 @@
-n_iterations: 25
-n_train_samples: 37, n_test_samples: 16
-mean_support_vectors: []
-mean_accuracy: 0.56 +- 0.10 std (18.59% RSC) 
-mean_precision: 0.63 +- 0.22 std (35.53% RSC) 
-mean_recall: 0.59 +- 0.06 std (10.11% RSC) 

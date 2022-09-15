@@ -1,0 +1,15 @@
+path:
+  BASE_PATH: "dataset"
+  DATASET_PATH: "reduced"
+  DATASET_PROCESSED_PATH: "processed"
+  DATASET_SCALED_PATH: "scaled"
+  PROCESSED_IMAGES: "processed_images.npy"
+  LABELS: "labels.npy"
+  OUTPUT_ANALYSIS_PATH: "output_analysis"
+flag:
+  PREPROCESSING: true
+  GREYSCALE: false
+  GENERATE_DATASET: false
+exec:
+  N_ITERATIONS: 5
+  N_RANDOM_STATE: 5

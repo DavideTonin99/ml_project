@@ -1,15 +1,20 @@
-path:
-  BASE_PATH: "dataset"
-  DATASET_PATH: "reduced"
-  DATASET_PROCESSED_PATH: "processed"
-  DATASET_SCALED_PATH: "scaled"
-  PROCESSED_IMAGES: "processed_images.npy"
+folder:
+  BASE: "dataset"
+  DATASET: "original"
+  RESIZED: "resized"
+  SCALED: "scaled"
+  OUTPUT_ANALYSIS: "output_analysis"
+filename:
+  RESIZED_IMAGES: "resized_images.npy"
   LABELS: "labels.npy"
-  OUTPUT_ANALYSIS_PATH: "output_analysis"
 flag:
-  PREPROCESSING: true
+  PREPROCESSING: false
   GREYSCALE: false
-  GENERATE_DATASET: true
+  GENERATE_DATASET: false
 exec:
-  N_ITERATIONS: 5
-  N_RANDOM_STATE: 5
+  SAVE_IMAGES_RESIZED: true
+  N_ITERATIONS: 2
+  N_RANDOM_STATE: 2
+img:
+  width: 250
+  height: 250

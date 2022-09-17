@@ -7,7 +7,7 @@ dataset = Dataset(conf=conf, scaler="MinMaxScaler", auto_preprocess=True)
 
 # Configure classificators params
 pca_obj = {
-    "n_components": 0.8
+    "n_components": 0.10
 }
 
 svm_obj = {

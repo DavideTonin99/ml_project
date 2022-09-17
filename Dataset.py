@@ -1,4 +1,6 @@
 import os
+from itertools import repeat
+
 import yaml
 import numpy as np
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
@@ -8,6 +10,7 @@ from sklearn.metrics import confusion_matrix, accuracy_score, precision_score, r
 from sklearn import svm
 from sklearn.neighbors import KNeighborsClassifier
 import utils
+from matplotlib import pyplot as plt
 
 
 class Dataset:
@@ -46,7 +49,7 @@ class Dataset:
         self.x_test = self.x_test.reshape(self.x_test.shape[0], -1)
 
     def pca_fit(self, n_components=0.8):
-        print("PCA fit")
+        print(f"PCA fit, n_components {n_components}")
         self.model_pca = PCA(n_components)
         self.model_pca.fit(self.x_train)
 
@@ -54,6 +57,27 @@ class Dataset:
         print("PCA transform")
         self.x_train_pca = self.model_pca.transform(self.x_train)
         self.x_test_pca = self.model_pca.transform(self.x_test)
+
+        # salva output ricostruzione dopo pca
+        # n_images = len(self.y_train)
+        # reprojected_img = np.dot(self.x_train_pca, self.model_pca.components_.T.transpose())
+        # im_h = im_w = 250
+        # for i in range(n_images):
+        #     plt.figure()
+        #
+        #     temp_img = reprojected_img[i, :]
+        #     img_min = temp_img.min()
+        #     if img_min < 0:
+        #         temp_img = temp_img - img_min
+        #     else:
+        #         temp_img = temp_img + img_min
+        #     img_max = temp_img.max()
+        #     temp_img = temp_img / img_max
+        #
+        #     temp_img = temp_img.reshape((im_h, im_w, 3))
+        #     plt.imshow(temp_img)
+        #     name = "C:\\Users\\Manu\\Desktop\\pca_output_color_10\\" + str(i)
+        #     plt.savefig(name)
 
     def svm_fit_predict(self, kernel='rbf', C=1, max_iteration=10000, gamma="scale"):
         print("SVM fit & predict probability")
@@ -65,7 +89,6 @@ class Dataset:
         self.model_svc.fit(self.x_train_pca, self.y_train)
         prediction = np.argmax(self.model_svc.predict_proba(self.x_test_pca), axis=1)
         self.prediction = prediction
-        self.svm_support_vectors = self.model_svc.n_support_
 
     def knn_fit_predict(self, n_neighbors=5, metric="euclidean"):
         print("KNN fit & predict probability")
@@ -119,6 +142,7 @@ class Dataset:
         self.save_confusion_matrix(random_state, iteration)
 
         self.results.append([accuracy, precision, recall])
+        self.svm_support_vectors.append(self.model_svc.n_support_)
 
     def empty_stats(self):
         self.results = []
@@ -180,8 +204,8 @@ class Dataset:
                 # fit the scaler on the 3 channels
                 self.scaler.fit(x_train_per_channel)
 
-                x_train_scaled = self.scaler.transform(x_train_per_channel)
-                x_test_scaled = self.scaler.transform(x_test_per_channel)
+                x_train_scaled = x_train_per_channel  # self.scaler.transform(x_train_per_channel)
+                x_test_scaled = x_test_per_channel  # self.scaler.transform(x_test_per_channel)
 
                 # reshape to return to the original shape of the images
                 x_train = x_train_scaled.reshape(x_train.shape[0], x_train.shape[1], x_train.shape[2], x_train.shape[3])

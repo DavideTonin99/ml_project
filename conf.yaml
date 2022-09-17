@@ -8,13 +8,13 @@ filename:
   RESIZED_IMAGES: "resized_images.npy"
   LABELS: "labels.npy"
 flag:
-  PREPROCESSING: false
+  PREPROCESSING: true
   GREYSCALE: false
-  GENERATE_DATASET: false
+  GENERATE_DATASET: true
 exec:
   SAVE_IMAGES_RESIZED: true
-  N_ITERATIONS: 2
-  N_RANDOM_STATE: 2
+  N_ITERATIONS: 1
+  N_RANDOM_STATE: 1
 img:
   width: 250
   height: 250

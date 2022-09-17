@@ -4,6 +4,7 @@ import numpy as np
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from sklearn.model_selection import train_test_split
 from sklearn.decomposition import PCA
+from sklearn.metrics import confusion_matrix, accuracy_score, precision_score, recall_score, ConfusionMatrixDisplay
 from sklearn import svm
 from sklearn.neighbors import KNeighborsClassifier
 import utils
@@ -16,6 +17,11 @@ class Dataset:
     CONF = {}
 
     def __init__(self, conf=None, scaler='MinMaxScaler', auto_preprocess=False):
+        self.svm_support_vectors = []
+        self.prediction = []
+        self.results = []
+        self.classificator_params = {}
+
         Dataset.CONF = conf if conf is not None else Dataset.parse_conf()
         Dataset.prepare_folder_structure(Dataset.CONF["folder"])
 
@@ -23,7 +29,9 @@ class Dataset:
 
         if auto_preprocess:
             if Dataset.CONF["flag"]["PREPROCESSING"]:
-                Dataset.resize(source_path=Dataset.CONF["folder"]["DATASET"], dest_path=Dataset.CONF["folder"]["RESIZED"], save_images_resized=Dataset.CONF["exec"]["SAVE_IMAGES_RESIZED"])
+                Dataset.resize(source_path=Dataset.CONF["folder"]["DATASET"],
+                               dest_path=Dataset.CONF["folder"]["RESIZED"],
+                               save_images_resized=Dataset.CONF["exec"]["SAVE_IMAGES_RESIZED"])
             if Dataset.CONF["flag"]["GENERATE_DATASET"]:
                 self.generate_scaled_data()
 
@@ -36,7 +44,6 @@ class Dataset:
 
         self.x_train = self.x_train.reshape(self.x_train.shape[0], -1)
         self.x_test = self.x_test.reshape(self.x_test.shape[0], -1)
-
 
     def pca_fit(self, n_components=0.8):
         print("PCA fit")
@@ -53,16 +60,77 @@ class Dataset:
         self.model_svc = svm.SVC(
             kernel=kernel, C=C, gamma=gamma, max_iter=max_iteration, decision_function_shape='ovr', probability=True
         )
+        # print(
+        #     f"SVM params: n of classes {len(self.model_svc.classes_)} n_iter_{self.model_svc.n_iter_}, n_features_in_{self.model_svc.n_features_in_}")
         self.model_svc.fit(self.x_train_pca, self.y_train)
         prediction = np.argmax(self.model_svc.predict_proba(self.x_test_pca), axis=1)
-        self.svm_prediction = prediction
+        self.prediction = prediction
         self.svm_support_vectors = self.model_svc.n_support_
 
-    def knn_fit(self):
-        pass
+    def knn_fit_predict(self, n_neighbors=5, metric="euclidean"):
+        print("KNN fit & predict probability")
 
-    def knn_transform(self):
-        pass
+        neigh = KNeighborsClassifier(n_neighbors=n_neighbors, n_jobs=-1, metric=metric)
+        # print(
+        #     f"KNN params: n of classes {len(neigh.classes_)} effective_metric_{neigh.effective_metric_}, n_features_in_{neigh.n_features_in_}")
+        neigh.fit(self.x_train_pca, self.y_train)
+        prediction = np.argmax(neigh.predict_proba(self.x_test_pca), axis=1)
+        self.prediction = prediction
+
+    def iterate_predictions(self, pca_obj=None, svm_obj=None, knn_obj=None, cnn=None):
+        # we iterate over random_state to be sure that training set data changes from an iteration to another so, we have more variability in the test
+        for random_state in range(0, Dataset.CONF["exec"]["N_RANDOM_STATE"]):
+            for iteration in range(0, Dataset.CONF["exec"]["N_ITERATIONS"]):
+                print()
+                print("=" * 30)
+                print()
+                print(f"start random_state {random_state}, iteration {iteration}")
+
+                self.load_data(f"rs{random_state}_it{iteration}")
+
+                if pca_obj:
+                    self.pca_fit(n_components=pca_obj["n_components"])
+                    self.pca_transform()
+                if svm_obj:
+                    self.classificator_params = svm_obj
+
+                    self.svm_fit_predict(
+                        kernel=svm_obj["kernel"],
+                        C=svm_obj["C"],
+                        max_iteration=svm_obj["max_iteration"],
+                        gamma=svm_obj["gamma"]
+                    )
+                if knn_obj:
+                    self.classificator_params = knn_obj
+
+                    self.knn_fit_predict(
+                        n_neighbors=knn_obj["n_neighbors"],
+                        metric=knn_obj["metric"]
+                    )
+
+                self.compute_stats(random_state, iteration)
+
+    def compute_stats(self, random_state, iteration):
+        accuracy = accuracy_score(self.y_test, self.prediction)
+        precision = precision_score(self.y_test, self.prediction, average='macro')
+        recall = recall_score(self.y_test, self.prediction, average='macro')
+        # print([accuracy, precision, recall])
+
+        self.save_confusion_matrix(random_state, iteration)
+
+        self.results.append([accuracy, precision, recall])
+
+    def empty_stats(self):
+        self.results = []
+        self.svm_support_vectors = []
+
+    def save_confusion_matrix(self, random_state, iteration):
+        confusion_mat = confusion_matrix(self.y_test, self.prediction)
+        display_confusion_mat = ConfusionMatrixDisplay(confusion_matrix=confusion_mat)
+        display_confusion_mat.plot()
+        display_confusion_mat.figure_.savefig(
+            os.path.join(Dataset.CONF["folder"]["OUTPUT_ANALYSIS"],
+                         f'confusion_matrix_{random_state}_it{iteration}.png'))
 
     def set_scaler(self, scaler):
         """
@@ -74,11 +142,12 @@ class Dataset:
         else:
             raise Exception("Not implemented")
 
-    def generate_scaled_data(self, data=None, labels=None, scaled_out_path=None, n_iterations=None, n_random_state=None):
+    def generate_scaled_data(self, data=None, labels=None, scaled_out_path=None, n_iterations=None,
+                             n_random_state=None):
         """
         """
         print("Generate scaled data")
-        print("="*30)
+        print("=" * 30)
         data = data if data is not None else np.load(Dataset.CONF['filename']['RESIZED_IMAGES'])
         labels = labels if labels is not None else np.load(Dataset.CONF['filename']['LABELS'])
         scaled_out_path = scaled_out_path if scaled_out_path is not None else Dataset.CONF['folder']['SCALED']
@@ -134,7 +203,7 @@ class Dataset:
         :return: conf : configuration in the format key - value
         """
         print("Loading configuration from file")
-        print("="*30)
+        print("=" * 30)
         conf = None
         if conf_type == "yaml":
             stream = open(Dataset.CONF_PATH, 'r')
@@ -143,7 +212,7 @@ class Dataset:
             raise Exception("Not implemented")
 
         conf['folder']['BASE'] = os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                                                      conf["folder"]["BASE"])
+                                              conf["folder"]["BASE"])
         for k in ["folder", "filename"]:
             for key, value in conf[k].items():
                 conf[k][key] = os.path.join(conf["folder"]["BASE"], value)
@@ -172,7 +241,7 @@ class Dataset:
         :return:
         """
         print("Resize images")
-        print("="*30)
+        print("=" * 30)
         dirs = utils.get_dirs_in_dir(source_path)
         dirs.pop(0)  # remove first element "./dataset/"
 
@@ -181,6 +250,7 @@ class Dataset:
         labels = []
 
         for index, curr_dir in enumerate(dirs):
+            print(f"curr_dir {curr_dir}")
             src = curr_dir
             dst = curr_dir.replace(src, dest_path)
 
@@ -188,7 +258,7 @@ class Dataset:
                 os.makedirs(dst)
             files = utils.get_files_dir(src)
             resized = utils.resize_images(dim=(Dataset.CONF["img"]["width"], Dataset.CONF["img"]["height"]),
-                                                 images=files, src=src, dst=dst)
+                                          images=files, src=src, dst=dst)
             for img in resized:
                 paths.append(img["path"])
                 resized_images.append(img["data"])

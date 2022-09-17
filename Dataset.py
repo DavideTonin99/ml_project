@@ -59,25 +59,26 @@ class Dataset:
         self.x_test_pca = self.model_pca.transform(self.x_test)
 
         # salva output ricostruzione dopo pca
-        # n_images = len(self.y_train)
-        # reprojected_img = np.dot(self.x_train_pca, self.model_pca.components_.T.transpose())
-        # im_h = im_w = 250
-        # for i in range(n_images):
-        #     plt.figure()
-        #
-        #     temp_img = reprojected_img[i, :]
-        #     img_min = temp_img.min()
-        #     if img_min < 0:
-        #         temp_img = temp_img - img_min
-        #     else:
-        #         temp_img = temp_img + img_min
-        #     img_max = temp_img.max()
-        #     temp_img = temp_img / img_max
-        #
-        #     temp_img = temp_img.reshape((im_h, im_w, 3))
-        #     plt.imshow(temp_img)
-        #     name = "C:\\Users\\Manu\\Desktop\\pca_output_color_10\\" + str(i)
-        #     plt.savefig(name)
+        n_images = len(self.y_train)
+
+        reprojected_img = np.dot(self.x_train_pca, self.model_pca.components_.T.transpose())
+        im_h = im_w = 250
+        for i in range(n_images):
+            plt.figure()
+
+            temp_img = reprojected_img[i, :]
+            img_min = temp_img.min()
+            if img_min < 0:
+                temp_img = temp_img - img_min
+            else:
+                temp_img = temp_img + img_min
+            img_max = temp_img.max()
+            temp_img = temp_img / img_max
+
+            temp_img = temp_img.reshape((im_h, im_w, 3))
+            plt.imshow(temp_img)
+            name = "C:\\Users\\Manu\\Desktop\\pca_output_color_10\\" + str(i)
+            plt.savefig(name)
 
     def svm_fit_predict(self, kernel='rbf', C=1, max_iteration=10000, gamma="scale"):
         print("SVM fit & predict probability")
@@ -204,8 +205,8 @@ class Dataset:
                 # fit the scaler on the 3 channels
                 self.scaler.fit(x_train_per_channel)
 
-                x_train_scaled = x_train_per_channel  # self.scaler.transform(x_train_per_channel)
-                x_test_scaled = x_test_per_channel  # self.scaler.transform(x_test_per_channel)
+                x_train_scaled = self.scaler.transform(x_train_per_channel)
+                x_test_scaled = self.scaler.transform(x_test_per_channel)
 
                 # reshape to return to the original shape of the images
                 x_train = x_train_scaled.reshape(x_train.shape[0], x_train.shape[1], x_train.shape[2], x_train.shape[3])

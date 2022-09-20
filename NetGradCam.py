@@ -11,28 +11,28 @@ class NetGradCam(torch.nn.Module):
         self.gradients = None
 
         # Isolate the feature and classifier blocks
-        if model_type == 'vgg16':
-            self.features = model.features
-            self.avgpool = model.avgpool
-            self.classifier = model.classifier
-        elif model_type == 'vgg19':
-            self.features = model.features
-            self.avgpool = model.avgpool
-            self.classifier = model.classifier
-        elif model_type == 'resnet18':
-            self.features = torch.nn.Sequential(
-                model.conv1,
-                model.bn1,
-                model.relu,
-                model.maxpool,
-                model.layer1,
-                model.layer2,
-                model.layer3,
-                model.layer4
-            )
-            self.avgpool = model.avgpool
-            self.classifier = model.fc
-        elif model_type == 'resnet50':
+        # if model_type == 'vgg16':
+        #     self.features = model.features
+        #     self.avgpool = model.avgpool
+        #     self.classifier = model.classifier
+        # elif model_type == 'vgg19':
+        #     self.features = model.features
+        #     self.avgpool = model.avgpool
+        #     self.classifier = model.classifier
+        # elif model_type == 'resnet18':
+        #     self.features = torch.nn.Sequential(
+        #         model.conv1,
+        #         model.bn1,
+        #         model.relu,
+        #         model.maxpool,
+        #         model.layer1,
+        #         model.layer2,
+        #         model.layer3,
+        #         model.layer4
+        #     )
+        #     self.avgpool = model.avgpool
+        #     self.classifier = model.fc
+        if model_type == 'resnet50':
             self.features = torch.nn.Sequential(
                 model.conv1,
                 model.bn1,
@@ -46,6 +46,10 @@ class NetGradCam(torch.nn.Module):
             self.avgpool = model.avgpool
             self.classifier = model.fc
         elif model_type == 'efficientnet_b0':
+            self.features = model.features
+            self.avgpool = model.avgpool
+            self.classifier = model.classifier
+        elif model_type == 'efficientnet_b1':
             self.features = model.features
             self.avgpool = model.avgpool
             self.classifier = model.classifier

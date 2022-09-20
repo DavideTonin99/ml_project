@@ -40,8 +40,10 @@ train_set_size = int(len(datafolder) * 0.8)
 valid_set_size = len(datafolder) - train_set_size
 train_set, valid_set = data.random_split(datafolder, [train_set_size, valid_set_size])
 
-network_type = "efficientbet_b0"
+network_type = "efficientbet_b0" # efficientnet_b0 | efficientnet_b1 | resnet50
 model = torchvision.models.efficientnet_b0(weights = 'DEFAULT')
+# model = torchvision.models.efficientnet_b1(weights = 'DEFAULT')
+# model = torchvision.models.resnet50(pretrained = True)
 
 for p in model.parameters():
     p.requires_grad = False
@@ -141,7 +143,7 @@ for epoch in range(EPOCHS):
         plt.pause(0.2)
 
 # GRADCAM
-net_gradcam = NetGradCam(model, '')
+net_gradcam = NetGradCam(model, network_type)
 for p in net_gradcam.parameters():
     p.requires_grad = True
 
@@ -189,11 +191,11 @@ for index, (X, y) in enumerate(gradcam_loader):
 
     plt.pause(1)
 
+# test phase
 valid_predictions = []
 valid_ground_truth = []
 valid_loss = 0
 
-# test phase
 for batch, (X, y) in enumerate(valid_loader):
     X = normalize(X).to(device)
     y = y.to(device)
@@ -215,7 +217,7 @@ confusion_mat = confusion_matrix(valid_ground_truth, valid_predictions)
 display_confusion_mat = ConfusionMatrixDisplay(confusion_matrix=confusion_mat)
 display_confusion_mat.plot()
 display_confusion_mat.figure_.savefig(
-    os.path.join(Dataset.CONF["folder"]["OUTPUT_ANALYSIS"],
+    os.path.join(conf["folder"]["OUTPUT_ANALYSIS"],
                     f'confusion_matrix_{random_state}_it{iteration}.png'))
 
 output_str = f"Network: {network_type}\n" \
